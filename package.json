@@ -2,15 +2,16 @@
   "name": "es-collaborative-painting",
   "version": "1.0.0",
   "description": "Collaborative web painting application",
-  "main": "app.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "webpack-dev-server",
+    "start": "concurrently \"webpack-dev-server --config ./client/webpack.config.js\" \"nodemon ./server/server.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Fabian Johannsen",
   "license": "ISC",
   "devDependencies": {
     "clean-webpack-plugin": "^0.1.17",
+    "concurrently": "^3.5.1",
     "css-loader": "^0.28.8",
     "eslint": "^4.15.0",
     "eslint-config-airbnb": "^16.1.0",
@@ -22,6 +23,9 @@
     "webpack-dev-server": "^2.11.0"
   },
   "dependencies": {
-    "simple-color-picker": "^0.1.2"
+    "express": "^4.16.2",
+    "simple-color-picker": "^0.1.2",
+    "socket.io": "^2.0.4",
+    "socket.io-client": "^2.0.4"
   }
 }

@@ -1,10 +1,15 @@
-// Color picker
 import ColorPicker from 'simple-color-picker';
 import 'simple-color-picker/src/simple-color-picker.css';
+import io from 'socket.io-client';
 
 // Get canvas element and set context
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+
+// Socket
+const socket = io('http://localhost:3000');
+socket.on('drawing-data', data => paint(data.currentPos, data.previousPos, data.pathOpt, false));
+socket.on('image-data', data => renderImg(data));
 
 let drawing = false;
 let currentPos = {};
@@ -43,31 +48,36 @@ function onMouseDown(e) {
     undoPaths = [];
     initNewPath(e);
     drawing = true;
-    paint();
+    paint(currentPos, previousPos, pathOpt, true); // Paint the dot
 }
 
 function onMouseMove(e) {
     if (!drawing) { return; }
     setCoordinates(e);
-    points.push({ x: currentPos.x, y: currentPos.y });
-    paint();
+    points.push(currentPos);
+    paint(currentPos, previousPos, pathOpt, true);
 }
 
 function onMouseUp() {
     if (!drawing) { return; }
     paths.push({
         path: points,
-        options: Object.assign({}, pathOpt),
+        options: pathOpt,
     });
     drawing = false;
 }
 
 // Paint & Repaint
-const paint = () => {
+const paint = (currPos, prevPos, opt, emit) => {
+    ctx.lineWidth = opt.lineWidth;
+    ctx.strokeStyle = opt.color;
     ctx.beginPath();
-    ctx.moveTo(currentPos.x, currentPos.y);
-    ctx.lineTo(previousPos.x, previousPos.y);
+    ctx.moveTo(currPos.x, currPos.y);
+    ctx.lineTo(prevPos.x, prevPos.y);
     ctx.stroke();
+    if (emit) { // Prevents constant loop of recieving and emmiting
+        socket.emit('drawing', { currentPos, previousPos, pathOpt });
+    }
 };
 
 const repaint = () => {
@@ -89,9 +99,10 @@ const repaint = () => {
     }
 };
 
+// Tools event listener functions
 function onImageDrop(e) {
     e.preventDefault();
-    loadImage(e.dataTransfer.files[0]);
+    loadImage(e.dataTransfer.files[0]); // dataTransfer holds the drag and drop operation data
 }
 
 const loadImage = (src) => {
@@ -101,10 +112,11 @@ const loadImage = (src) => {
         console.log('The dropped file is not an image: ', src.type);
         return;
     }
-    const reader = new FileReader();
+    const reader = new FileReader(); // asynchronously read the contents of file
     reader.onload = (e) => {
         renderImg(e.target.result);
         paths.push({ image: e.target.result });
+        socket.emit('image', e.target.result);
     };
     reader.readAsDataURL(src);
 };
@@ -117,7 +129,6 @@ const renderImg = (src) => {
     image.src = src;
 };
 
-// Tools event listener functions
 function onUndoClick() {
     if (paths.length !== 0) {
         undoPaths.push(paths.pop());
@@ -140,11 +151,9 @@ const initNewPath = (e) => {
         lineWidth: lineWidthSlider.value,
         color: colorPicker.getHexString(),
     };
-    ctx.lineWidth = pathOpt.lineWidth;
-    ctx.strokeStyle = pathOpt.color;
     setCoordinates(e);
     ctx.moveTo(currentPos.x, currentPos.y);
-    points.push({ x: currentPos.x, y: currentPos.y });
+    points.push(currentPos);
 };
 
 const setCoordinates = (e) => {
@@ -157,3 +166,4 @@ const setCoordinates = (e) => {
         y: e.pageY - canvas.offsetTop,
     };
 };
+

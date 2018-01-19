@@ -5,7 +5,7 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CleanWebpackPlugin = require('clean-webpack-plugin');
 
 module.exports = {
-    entry: './app.js',
+    entry: path.resolve(__dirname, './src/app.js'),
     devtool: 'inline-source-map',
     output: {
         path: path.resolve(__dirname, './dist'),
@@ -21,7 +21,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './index.html'
+            template: path.resolve(__dirname, './index.html')
         }),
         new CleanWebpackPlugin(['dist'])
     ]
