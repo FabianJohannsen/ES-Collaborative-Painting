@@ -12,9 +12,11 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
     console.log('A user connected');
-    socket.on('drawing', data => socket.broadcast.emit('drawing-data', data));
-    socket.on('image', data => socket.broadcast.emit('image-data', data));
-    socket.on('path-end', data => socket.broadcast.emit('path-end-data', data));
+    socket.on('drawing', data => io.emit('drawing-data', data));
+    socket.on('image', data => io.emit('image-data', data));
+    socket.on('path-end', data => io.emit('path-end-data', data));
+    socket.on('undo', id => io.emit('undo-id', id));
+    socket.on('redo', id => io.emit('redo-id', id));
     socket.on('disconnect', () => console.log('A user disconnected'));
 });
 

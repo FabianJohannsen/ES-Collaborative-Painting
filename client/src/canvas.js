@@ -21,8 +21,27 @@ export default class Canvas {
         // Socket events
         this.socket = io('http://localhost:3000');
         this.socket.on('drawing-data', data => paint(this.ctx, data));
-        this.socket.on('image-data', data => renderImg(this.ctx, data));
-        this.socket.on('path-end-data', data => this.incomingPaths.push(data));
+        this.socket.on('path-end-data', data => this.paths.push(data));
+        this.socket.on('image-data', (data) => {
+            this.paths.push(data);
+            renderImg(this.ctx, data.image);
+        });
+        this.socket.on('undo-id', (id) => {
+            if (this.paths.length > 0) {
+                if (this.paths.map(obj => obj.id).lastIndexOf(id) !== -1) {
+                    this.undoPaths.push(this.paths.splice(this.paths.map(obj => obj.id).lastIndexOf(id), 1)[0]);
+                    repaint(this.ctx, this.paths);
+                }
+            }
+        });
+        this.socket.on('redo-id', (id) => {
+            if (this.undoPaths.length > 0) {
+                if (this.undoPaths.map(obj => obj.id).lastIndexOf(id) !== -1) {
+                    this.paths.push(this.undoPaths.splice(this.undoPaths.map(obj => obj.id).lastIndexOf(id), 1)[0]);
+                    repaint(this.ctx, this.paths);
+                }
+            }
+        });
         // Undo & Redo buttons
         this.undoBtn = document.getElementById('undo');
         this.redoBtn = document.getElementById('redo');
@@ -37,12 +56,11 @@ export default class Canvas {
         this.canvas.addEventListener('dragover', (e) => { e.preventDefault(); }, true); // Necessary?
         this.canvas.addEventListener('drop', this.onImageDrop.bind(this), true);
         // Undo & Redo buttons event listeners
-        this.undoBtn.addEventListener('click', this.onUndeClick.bind(this, this.paths, this.undoPaths, this.incomingPaths));
-        this.redoBtn.addEventListener('click', this.onRedoClick.bind(this, this.paths, this.undoPaths, this.incomingPaths));
+        this.undoBtn.addEventListener('click', () => this.socket.emit('undo', this.socket.id));
+        this.redoBtn.addEventListener('click', () => this.socket.emit('redo', this.socket.id));
     }
 
     start(e) {
-        this.undoPaths = []; // Empty undpPaths to simulate real undo/redo (?)
         const options = {
             lineWidth: this.tools.lineWidth,
             color: this.tools.color,
@@ -51,21 +69,27 @@ export default class Canvas {
         const y = e.pageY - this.canvas.offsetTop;
         this.path = new Path(x, y, options);
         this.drawing = true;
-        paint(this.ctx, this.path, this.socket);
+        this.socket.emit('drawing', {
+            currentPos: this.path.currentPos,
+            previousPos: this.path.previousPos,
+            options: this.path.options,
+        });
     }
 
     move(e) {
         if (!this.drawing) { return; }
         this.path.addPoint(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
-        paint(this.ctx, this.path, this.socket);
+        this.socket.emit('drawing', {
+            currentPos: this.path.currentPos,
+            previousPos: this.path.previousPos,
+            options: this.path.options,
+        });
     }
 
     stop() {
         if (!this.drawing) { return; }
-        this.paths.push(this.path);
         this.drawing = false;
-        this.socket.emit('path-end', this.path);
-        // console.log(this.socket.id);
+        this.socket.emit('path-end', { path: this.path, id: this.socket.id });
     }
 
     onImageDrop(dropEvent) {
@@ -79,28 +103,8 @@ export default class Canvas {
         }
         const reader = new FileReader(); // asynchronously read the contents of file
         reader.onload = (loadEvent) => {
-            renderImg(this.ctx, loadEvent.target.result);
-            this.paths.push({ image: loadEvent.target.result });
-            this.socket.emit('image', loadEvent.target.result);
+            this.socket.emit('image', { image: loadEvent.target.result, id: this.socket.id });
         };
         reader.readAsDataURL(src);
-    }
-
-    onUndeClick(paths, undoPaths, incomingPaths) {
-        if (paths.length !== 0) {
-            undoPaths.push(paths.pop());
-            this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-            repaint(this.ctx, paths);
-            repaint(this.ctx, incomingPaths); // Don't undo paths from other clients
-        }
-    }
-
-    onRedoClick(paths, undoPaths, incomingPaths) {
-        if (undoPaths.length !== 0) {
-            paths.push(undoPaths.pop());
-            this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-            repaint(this.ctx, paths);
-            repaint(this.ctx, incomingPaths); // Don't undo paths from other clients
-        }
     }
 }
