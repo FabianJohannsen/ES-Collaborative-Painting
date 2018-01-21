@@ -14,6 +14,7 @@ io.on('connection', (socket) => {
     console.log('A user connected');
     socket.on('drawing', data => socket.broadcast.emit('drawing-data', data));
     socket.on('image', data => socket.broadcast.emit('image-data', data));
+    socket.on('path-end', data => socket.broadcast.emit('path-end-data', data));
     socket.on('disconnect', () => console.log('A user disconnected'));
 });
 
