@@ -15,7 +15,6 @@ export default class Canvas {
         this.path = null;
         this.paths = [];
         this.undoPaths = [];
-        this.incomingPaths = [];
         // Initlialize toolset
         this.tools = new Toolset();
         // Socket events
@@ -45,6 +44,8 @@ export default class Canvas {
         // Undo & Redo buttons
         this.undoBtn = document.getElementById('undo');
         this.redoBtn = document.getElementById('redo');
+        // Save button
+        this.saveBtn = document.getElementById('save');
     }
 
     init() {
@@ -58,6 +59,8 @@ export default class Canvas {
         // Undo & Redo buttons event listeners
         this.undoBtn.addEventListener('click', () => this.socket.emit('undo', this.socket.id));
         this.redoBtn.addEventListener('click', () => this.socket.emit('redo', this.socket.id));
+        // Save button event listener
+        this.saveBtn.addEventListener('click', this.onSaveClick.bind(this));
     }
 
     start(e) {
@@ -106,5 +109,9 @@ export default class Canvas {
             this.socket.emit('image', { image: loadEvent.target.result, id: this.socket.id });
         };
         reader.readAsDataURL(src);
+    }
+
+    onSaveClick(e) {
+        console.log(this.canvas.toDataURL());
     }
 }

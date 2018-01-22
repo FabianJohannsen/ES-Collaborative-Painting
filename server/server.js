@@ -1,14 +1,12 @@
 /* eslint no-console: 0 */
-
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const image = require('./routes/image');
 
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-    res.send('Hellooo');
-});
+app.use('/', image);
 
 io.on('connection', (socket) => {
     console.log('A user connected');
