@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 import Path from './path';
 import Toolset from './tools';
 import { paint, repaint, renderImg } from './render';
+import { saveImage } from './http';
 
 export default class Canvas {
     constructor(canvas, ctx) {
@@ -13,34 +14,13 @@ export default class Canvas {
         // Class variables
         this.drawing = false;
         this.path = null;
-        this.paths = [];
-        this.undoPaths = [];
         // Initlialize toolset
         this.tools = new Toolset();
         // Socket events
         this.socket = io('http://localhost:3000');
         this.socket.on('drawing-data', data => paint(this.ctx, data));
-        this.socket.on('path-end-data', data => this.paths.push(data));
-        this.socket.on('image-data', (data) => {
-            this.paths.push(data);
-            renderImg(this.ctx, data.image);
-        });
-        this.socket.on('undo-id', (id) => {
-            if (this.paths.length > 0) {
-                if (this.paths.map(obj => obj.id).lastIndexOf(id) !== -1) {
-                    this.undoPaths.push(this.paths.splice(this.paths.map(obj => obj.id).lastIndexOf(id), 1)[0]);
-                    repaint(this.ctx, this.paths);
-                }
-            }
-        });
-        this.socket.on('redo-id', (id) => {
-            if (this.undoPaths.length > 0) {
-                if (this.undoPaths.map(obj => obj.id).lastIndexOf(id) !== -1) {
-                    this.paths.push(this.undoPaths.splice(this.undoPaths.map(obj => obj.id).lastIndexOf(id), 1)[0]);
-                    repaint(this.ctx, this.paths);
-                }
-            }
-        });
+        this.socket.on('image-data', data => renderImg(this.ctx, data.image));
+        this.socket.on('repaint', data => repaint(this.ctx, data));
         // Undo & Redo buttons
         this.undoBtn = document.getElementById('undo');
         this.redoBtn = document.getElementById('redo');
@@ -60,7 +40,7 @@ export default class Canvas {
         this.undoBtn.addEventListener('click', () => this.socket.emit('undo', this.socket.id));
         this.redoBtn.addEventListener('click', () => this.socket.emit('redo', this.socket.id));
         // Save button event listener
-        this.saveBtn.addEventListener('click', this.onSaveClick.bind(this));
+        this.saveBtn.addEventListener('click', () => saveImage(this.canvas.toDataURL()));
     }
 
     start(e) {
@@ -109,9 +89,5 @@ export default class Canvas {
             this.socket.emit('image', { image: loadEvent.target.result, id: this.socket.id });
         };
         reader.readAsDataURL(src);
-    }
-
-    onSaveClick(e) {
-        console.log(this.canvas.toDataURL());
     }
 }

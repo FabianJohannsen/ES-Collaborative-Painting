@@ -9,7 +9,7 @@ router.get('/image', (req, res, next) => {
 
 // POST
 router.post('/image', (req, res, next) => {
-    res.send('POST IMAGE');
+    console.log(req.body);
 });
 
 // Export router
