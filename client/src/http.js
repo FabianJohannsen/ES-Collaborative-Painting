@@ -7,6 +7,7 @@ export async function saveImage(data) {
         body: JSON.stringify({ data }),
     }).then((res) => {
         if (!res.ok) { throw Error(res.statusText); }
+        alert('Canvas saved');
         return res;
     }).catch(e => console.error(e));
 }

@@ -1,7 +1,8 @@
 /* eslint no-console: 0 */
 const express = require('express');
 const cors = require('cors');
-const image = require('./routes/image');
+const low = require('lowdb');
+const FileAsync = require('lowdb/adapters/FileAsync');
 
 const app = express();
 
@@ -13,12 +14,36 @@ app.use(cors());
 // JSON body parser thingy
 app.use(express.json());
 
-// Routes
-app.use('/', image);
-
 // Sockets
 const http = require('http').Server(app);
 require('./socket').listen(http);
 
-// Start server
-http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const adapter = new FileAsync('db.json');
+low(adapter)
+    .then((db) => {
+        // POST /image
+        app.post('/image', (req, res) => {
+            db.get('images')
+                .push(req.body)
+                .last()
+                .assign({ id: Date.now().toString() })
+                .write()
+                .then(image => res.send(image));
+        });
+
+        // GET /image/:id
+        app.get('/image/:id', (req, res) => {
+            const image = db.get('images')
+                .find({ id: req.params.id })
+                .value();
+
+            res.send(image);
+        });
+
+        // Set db default values
+        return db.defaults({ images: [] }).write();
+    })
+    .then(() => {
+        // Start server
+        http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    });

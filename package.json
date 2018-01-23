@@ -4,7 +4,7 @@
   "description": "Collaborative web painting application",
   "main": "src/app.js",
   "scripts": {
-    "start": "concurrently \"webpack-dev-server --config ./client/webpack.config.js\" \"nodemon ./server/server.js\"",
+    "start": "concurrently \"webpack-dev-server --config ./client/webpack.config.js\" \"nodemon ./server/server.js --ignore db.json\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Fabian Johannsen",
@@ -23,8 +23,9 @@
     "webpack-dev-server": "^2.11.0"
   },
   "dependencies": {
-    "cors": "^2.8.4",    
+    "cors": "^2.8.4",
     "express": "^4.16.2",
+    "lowdb": "^1.0.0",
     "simple-color-picker": "^0.1.2",
     "socket.io": "^2.0.4",
     "socket.io-client": "^2.0.4"
