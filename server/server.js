@@ -31,6 +31,14 @@ low(adapter)
                 .then(image => res.send(image));
         });
 
+        // GET /image (returns image ids)
+        app.get('/image', (req, res) => {
+            const ids = db.get('images')
+                .value()
+                .map(image => image.id);
+            res.send(ids);
+        });
+
         // GET /image/:id
         app.get('/image/:id', (req, res) => {
             const image = db.get('images')

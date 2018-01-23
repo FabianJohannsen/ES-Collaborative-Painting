@@ -2,8 +2,8 @@ import io from 'socket.io-client';
 
 import Path from './path';
 import Toolset from './tools';
-import { paint, repaint, renderImg } from './render';
-import { saveImage } from './http';
+import { paint, repaint, renderImg, renderSavedCanvas } from './render';
+import { saveImage, getImages, getImageById } from './http';
 
 export default class Canvas {
     constructor(canvas, ctx) {
@@ -21,11 +21,15 @@ export default class Canvas {
         this.socket.on('drawing-data', data => paint(this.ctx, data));
         this.socket.on('image-data', data => renderImg(this.ctx, data.image));
         this.socket.on('repaint', data => repaint(this.ctx, data));
+        this.socket.on('render-canvas', data => renderSavedCanvas(this.ctx, data));
         // Undo & Redo buttons
         this.undoBtn = document.getElementById('undo');
         this.redoBtn = document.getElementById('redo');
         // Save button
         this.saveBtn = document.getElementById('save');
+        // List saved images
+        this.list = document.getElementById('images');
+        this.listImages();
     }
 
     init() {
@@ -89,5 +93,23 @@ export default class Canvas {
             this.socket.emit('image', { image: loadEvent.target.result, id: this.socket.id });
         };
         reader.readAsDataURL(src);
+    }
+
+    listImages() {
+        getImages().then((ids) => {
+            for (const id of ids) {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.textContent = id;
+                a.setAttribute('href', '#');
+                a.onclick = () => {
+                    getImageById(a.innerHTML).then((res) => {
+                        this.socket.emit('load-canvas', { image: res.data, id: this.socket.id });
+                    });
+                };
+                li.appendChild(a);
+                this.list.appendChild(li);
+            }
+        });
     }
 }

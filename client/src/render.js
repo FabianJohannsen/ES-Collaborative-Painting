@@ -33,3 +33,10 @@ export function renderImg(ctx, src) {
         image.src = src;
     });
 }
+
+export function renderSavedCanvas(ctx, src) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const image = new Image();
+    image.onload = () => ctx.drawImage(image, 0, 0, image.width, image.height);
+    image.src = src;
+}

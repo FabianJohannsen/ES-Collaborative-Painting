@@ -3,8 +3,8 @@ const socketio = require('socket.io');
 module.exports.listen = (app) => {
     const io = socketio(app);
 
-    const canvasObjects = [];
-    const undoneObjects = [];
+    let canvasObjects = [];
+    let undoneObjects = [];
 
     io.on('connection', (socket) => {
         console.log('A user connected');
@@ -40,8 +40,19 @@ module.exports.listen = (app) => {
                 }
             }
         });
+        socket.on('load-canvas', (data) => {
+            emptyPaths();
+            canvasObjects.push(data);
+            io.emit('render-canvas', data.image);
+        });
         socket.on('disconnect', () => console.log('A user disconnected'));
     });
+
+
+    function emptyPaths() {
+        canvasObjects = [];
+        undoneObjects = [];
+    }
 
     return io;
 };
