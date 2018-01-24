@@ -1,0 +1,48 @@
+#header {
+    height: 90px;
+    line-height: 90px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 32px;    
+}
+
+#container {
+    width:800px; 
+    margin:0 auto;
+    display: flex;
+}
+
+#tools-container {
+    margin-left: 10px;
+}
+
+button {
+    width: 100%;
+    background-color: #24a2c9;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+#line-width {
+    width: 100%;
+}
+
+ol {
+    font-size: 24px;
+}
+
+ol, li {
+    margin-bottom: 10px;
+}
+
+canvas {
+    border: 1px solid;
+    border-color: #9fa0a0
+}

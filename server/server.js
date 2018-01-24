@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 
 // JSON body parser thingy
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Sockets
 const http = require('http').Server(app);

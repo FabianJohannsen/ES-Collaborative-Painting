@@ -1,7 +1,8 @@
 import io from 'socket.io-client';
+import config from '../config';
 
 import Path from './path';
-import Toolset from './tools';
+import Brush from './brush';
 import { paint, repaint, renderImg, renderSavedCanvas } from './render';
 import { saveImage, getImages, getImageById } from './http';
 
@@ -14,14 +15,15 @@ export default class Canvas {
         // Class variables
         this.drawing = false;
         this.path = null;
-        // Initlialize toolset
-        this.tools = new Toolset();
+        // Initlialize Brush
+        this.brush = new Brush();
         // Socket events
-        this.socket = io('http://localhost:3000');
+        this.socket = io(`${config.url}:${config.port}`);
         this.socket.on('drawing-data', data => paint(this.ctx, data));
         this.socket.on('image-data', data => renderImg(this.ctx, data.image));
         this.socket.on('repaint', data => repaint(this.ctx, data));
         this.socket.on('render-canvas', data => renderSavedCanvas(this.ctx, data));
+        this.socket.on('list-canvases', () => this.listImages());
         // Undo & Redo buttons
         this.undoBtn = document.getElementById('undo');
         this.redoBtn = document.getElementById('redo');
@@ -44,21 +46,22 @@ export default class Canvas {
         this.undoBtn.addEventListener('click', () => this.socket.emit('undo', this.socket.id));
         this.redoBtn.addEventListener('click', () => this.socket.emit('redo', this.socket.id));
         // Save button event listener
-        this.saveBtn.addEventListener('click', () => saveImage(this.canvas.toDataURL()));
+        this.saveBtn.addEventListener('click', () => saveImage(this.canvas.toDataURL())
+            .then(() => this.socket.emit('canvas-saved')));
     }
 
     start(e) {
         const options = {
-            lineWidth: this.tools.lineWidth,
-            color: this.tools.color,
+            lineWidth: this.brush.lineWidth,
+            color: this.brush.color,
         };
         const x = e.pageX - this.canvas.offsetLeft;
         const y = e.pageY - this.canvas.offsetTop;
         this.path = new Path(x, y, options);
         this.drawing = true;
         this.socket.emit('drawing', {
-            currentPos: this.path.currentPos,
-            previousPos: this.path.previousPos,
+            currentPos: this.path.getCurrentPos,
+            previousPos: this.path.getPreviousPos,
             options: this.path.options,
         });
     }
@@ -67,8 +70,8 @@ export default class Canvas {
         if (!this.drawing) { return; }
         this.path.addPoint(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
         this.socket.emit('drawing', {
-            currentPos: this.path.currentPos,
-            previousPos: this.path.previousPos,
+            currentPos: this.path.getCurrentPos,
+            previousPos: this.path.getPreviousPos,
             options: this.path.options,
         });
     }
@@ -96,6 +99,8 @@ export default class Canvas {
     }
 
     listImages() {
+        // Empty list
+        this.list.innerHTML = '';
         getImages().then((ids) => {
             for (const id of ids) {
                 const li = document.createElement('li');

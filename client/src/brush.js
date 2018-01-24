@@ -1,7 +1,7 @@
 import ColorPicker from 'simple-color-picker';
 import 'simple-color-picker/src/simple-color-picker.css';
 
-export default class Toolset {
+export default class Brush {
     constructor() {
         this.colorPickerEl = document.getElementById('color-picker');
         this.lineWidthSlider = document.getElementById('line-width');

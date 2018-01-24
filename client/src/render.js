@@ -28,7 +28,10 @@ export async function repaint(ctx, paths) {
 export function renderImg(ctx, src) {
     return new Promise((resolve, reject) => {
         const image = new Image();
-        image.onload = () => resolve(ctx.drawImage(image, 0, 0, image.width, image.height));
+        image.onload = () => resolve(ctx.drawImage(
+            image, 0, 0, image.width, image.height,
+            0, 0, ctx.canvas.width, ctx.canvas.height,
+        ));
         image.onerror = reject;
         image.src = src;
     });

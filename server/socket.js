@@ -40,6 +40,7 @@ module.exports.listen = (app) => {
                 }
             }
         });
+        socket.on('canvas-saved', () => io.emit('list-canvases'));
         socket.on('load-canvas', (data) => {
             emptyPaths();
             canvasObjects.push(data);
